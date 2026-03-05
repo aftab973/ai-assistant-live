@@ -153,7 +153,7 @@ export default function LiveAssistant() {
                     clientContent: {
                       turns: [{
                         role: 'user',
-                        parts: [{ text: "Hello Jitender, please introduce yourself as Ashish sir's assistant and ask for my name. Speak in Hinglish." }]
+                        parts: [{ text: "Hello Jitendra, please introduce yourself as Ashish sir's assistant and ask for my name. Speak in Hinglish." }]
                       }],
                       turnComplete: true
                     }
@@ -327,7 +327,7 @@ export default function LiveAssistant() {
             part.text.includes('tool') || part.text.includes('step') ||
             part.text.startsWith('I\'ve determined') || part.text.startsWith('My next');
           if (!isThinkingText) {
-            setTranscription(`Jitender: ${part.text}`);
+            setTranscription(`Jitendra: ${part.text}`);
           }
           setIsAiSpeaking(true);
         }
@@ -597,7 +597,7 @@ export default function LiveAssistant() {
 
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-semibold text-slate-800">
-          {isActive ? (isAiSpeaking ? "Jitender is speaking..." : "Jitender is listening...") : "Talk to Jitender"}
+          {isActive ? (isAiSpeaking ? "Jitendra is speaking..." : "Jitendra is listening...") : "Talk to Jitendra"}
         </h2>
 
         {transcription && (
@@ -645,7 +645,7 @@ export default function LiveAssistant() {
         >
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-            Connecting to Jitender...
+            Connecting to Jitendra...
           </div>
           {reconnectCount > 0 && (
             <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
@@ -682,25 +682,7 @@ export default function LiveAssistant() {
         </div>
       )}
 
-      {/* Visual Debug Logs */}
-      <div className="mt-8 w-full max-w-xs bg-slate-900 rounded-xl p-3 font-mono text-[10px] text-emerald-400 overflow-hidden">
-        <div className="flex justify-between items-center mb-2 border-b border-emerald-900/50 pb-1">
-          <span className="text-emerald-500/50 uppercase tracking-tighter">System Logs</span>
-          <div className="flex gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-          </div>
-        </div>
-        <div className="space-y-1">
-          {logs.map((log, i) => (
-            <div key={i} className={i === 0 ? "opacity-100" : "opacity-40"}>
-              {`> ${log}`}
-            </div>
-          ))}
-          {logs.length === 0 && <div className="opacity-20 italic">Waiting for activity...</div>}
-        </div>
-      </div>
+
     </div>
   );
 }

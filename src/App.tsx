@@ -18,11 +18,11 @@ export default function App() {
               <p className="text-xs font-medium text-slate-500 uppercase tracking-widest">CFO Office</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-6">
             <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Jitender Online</span>
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Jitendra Online</span>
             </div>
             <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
               <ShieldCheck className="w-6 h-6" />
@@ -41,11 +41,11 @@ export default function App() {
                 <span className="text-indigo-600">Personal Assistant.</span>
               </h2>
               <p className="text-xl text-slate-500 max-w-xl leading-relaxed">
-                Namaste! Main Jitender hoon. I manage Ashish sir's schedule and appointments 
+                Namaste! Main Jitendra hoon. I manage Ashish sir's schedule and appointments
                 so he can focus on leading Achal Jewels.
               </p>
             </div>
-            
+
             <div className="flex flex-wrap gap-4">
               <div className="px-6 py-3 bg-white rounded-2xl border border-black/5 shadow-sm text-sm font-medium flex items-center gap-2">
                 <div className="w-2 h-2 bg-indigo-500 rounded-full" />

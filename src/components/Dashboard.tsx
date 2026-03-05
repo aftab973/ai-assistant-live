@@ -9,13 +9,13 @@ export default function Dashboard() {
   const [exporting, setExporting] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  const filteredAppointments = appointments.filter(apt => 
+  const filteredAppointments = appointments.filter(apt =>
     apt.caller_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (apt.company && apt.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (apt.purpose && apt.purpose.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredMessages = messages.filter(msg => 
+  const filteredMessages = messages.filter(msg =>
     (msg.caller_name && msg.caller_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
     msg.message.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -148,7 +148,7 @@ export default function Dashboard() {
             <h3 className="text-3xl font-bold text-slate-900">{appointments.length}</h3>
           </div>
         </div>
-        
+
         <div className="p-6 bg-white rounded-3xl border border-black/5 shadow-sm space-y-4">
           <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
             <Award className="w-6 h-6" />
@@ -165,22 +165,20 @@ export default function Dashboard() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Assistant</p>
-            <h3 className="text-xl font-bold text-slate-900">Jitender (Active)</h3>
+            <h3 className="text-xl font-bold text-slate-900">Jitendra (Active)</h3>
           </div>
         </div>
 
-        <button 
+        <button
           onClick={handleExport}
           disabled={exporting}
-          className={`p-6 rounded-3xl border shadow-sm space-y-4 text-left transition-all group ${
-            isGoogleAuth 
-              ? 'bg-blue-50 border-blue-100 hover:bg-blue-100' 
+          className={`p-6 rounded-3xl border shadow-sm space-y-4 text-left transition-all group ${isGoogleAuth
+              ? 'bg-blue-50 border-blue-100 hover:bg-blue-100'
               : 'bg-white border-black/5 hover:border-blue-200'
-          }`}
+            }`}
         >
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
-            isGoogleAuth ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400 group-hover:text-blue-600'
-          }`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${isGoogleAuth ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400 group-hover:text-blue-600'
+            }`}>
             {exporting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Cloud className="w-6 h-6" />}
           </div>
           <div>
@@ -202,7 +200,7 @@ export default function Dashboard() {
             Live View
           </span>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -245,7 +243,7 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <button 
+                      <button
                         onClick={() => deleteAppointment(apt.date, apt.time)}
                         className="p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                       >
@@ -267,7 +265,7 @@ export default function Dashboard() {
             For Ashish Sir
           </span>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -305,7 +303,7 @@ export default function Dashboard() {
                       {new Date(msg.created_at).toLocaleString()}
                     </td>
                     <td className="px-6 py-4">
-                      <button 
+                      <button
                         onClick={() => deleteMessage(msg.id)}
                         className="p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                       >
@@ -320,62 +318,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-8 bg-slate-900 text-white rounded-3xl space-y-6">
-          <div className="flex items-center gap-3">
-            <Gem className="w-6 h-6 text-amber-400" />
-            <h3 className="text-xl font-semibold">About Achal Jewels</h3>
-          </div>
-          <div className="space-y-4 text-slate-400 text-sm leading-relaxed">
-            <p>
-              Established in 1985, Achal Jewels is a premier name in Polki and diamond jewellery. 
-              Led by CEO Vikas Mehta and owners Arun, Poonam, and Sunil Kothari.
-            </p>
-            <p>
-              Directors Rohit, Divij, and Samriddh Kothari manage key operations. 
-              Rohit leads Mumbai, while Divij manages Purity Jewellery in Bangkok. 
-              Samriddh recently launched Starlit Luxury in Mumbai.
-            </p>
-            <p>
-              We specialize in award-winning Polki and diamond jewellery featuring Ruby, Emerald, and Pearls.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2 text-xs text-slate-300">
-              <MapPin className="w-3 h-3 text-slate-500" />
-              Jaipur (HQ)
-            </div>
-            <div className="flex items-center gap-2 text-xs text-slate-300">
-              <MapPin className="w-3 h-3 text-slate-500" />
-              Mumbai
-            </div>
-            <div className="flex items-center gap-2 text-xs text-slate-300">
-              <MapPin className="w-3 h-3 text-slate-500" />
-              Bangkok
-            </div>
-            <div className="flex items-center gap-2 text-xs text-slate-300">
-              <MapPin className="w-3 h-3 text-slate-500" />
-              Delhi
-            </div>
-          </div>
-          <div className="pt-4 border-t border-white/10 space-y-2">
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">IT Department</p>
-            <div className="space-y-1">
-              <p className="text-xs text-slate-300 font-medium">Sahid Ali (IT Manager)</p>
-              <p className="text-[10px] text-slate-500">Joined 2014 • From Assam • 9252155155</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-slate-300 font-medium">Layik Ahmed / Rehan</p>
-              <p className="text-[10px] text-slate-500">Senior Software Engineer</p>
-            </div>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 gap-6">
         <div className="p-8 bg-indigo-600 text-white rounded-3xl flex flex-col justify-between">
           <div className="space-y-4">
             <h3 className="text-2xl font-bold">Need to reach Ashish sir?</h3>
             <p className="text-indigo-100">
-              Shahid is here to help you manage your time and ensure Ashish sir gets your message.
+              Jitendra is here to help you manage your time and ensure Ashish sir gets your message.
             </p>
           </div>
           <div className="flex items-center gap-4 mt-8">
@@ -384,7 +332,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-indigo-200">Current Status</p>
-              <p className="font-bold">Jitender is Online</p>
+              <p className="font-bold">Jitendra is Online</p>
             </div>
           </div>
         </div>
