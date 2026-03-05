@@ -252,7 +252,7 @@ export default function LiveAssistant() {
     // Use the pre-warmed 16kHz context
     const inputContext = (window as any).inputAudioContext || new AudioContext({ sampleRate: 16000 });
     const source = inputContext.createMediaStreamSource(streamRef.current);
-    const processor = inputContext.createScriptProcessor(2048, 1, 1);
+    const processor = inputContext.createScriptProcessor(1024, 1, 1);
     const gainNode = inputContext.createGain();
     gainNode.gain.value = 0;
 
