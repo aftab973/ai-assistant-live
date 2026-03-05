@@ -1,0 +1,5 @@
+{
+  "name": "Shahid - CFO Assistant",
+  "description": "A professional Hinglish-speaking AI assistant for Ashish sir, CFO of Achal Jewels, powered by Gemini Live API.",
+  "requestFramePermissions": ["microphone"]
+}
