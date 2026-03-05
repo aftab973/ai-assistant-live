@@ -48,7 +48,7 @@ async function startServer() {
     }
   }));
 
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
   console.log("Server starting. GEMINI_API_KEY present:", !!process.env.GEMINI_API_KEY);
 
   // Google OAuth Setup
@@ -222,7 +222,7 @@ async function startServer() {
   });
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && !process.env.RENDER) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
