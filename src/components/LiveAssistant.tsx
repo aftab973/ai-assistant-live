@@ -129,6 +129,7 @@ export default function LiveAssistant() {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } },
           },
           tools: TOOLS,
+          thinkingConfig: { thinkingBudget: 0 },
         },
         callbacks: {
           onopen: () => {
