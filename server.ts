@@ -62,7 +62,7 @@ async function startServer() {
   app.get("/api/config", (req, res) => {
     res.json({
       hasApiKey: !!process.env.GEMINI_API_KEY,
-      model: "gemini-2.0-flash-exp"
+      model: "gemini-2.5-flash-native-audio-preview-12-2025"
     });
   });
 

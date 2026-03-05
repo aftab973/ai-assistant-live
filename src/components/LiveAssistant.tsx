@@ -117,7 +117,7 @@ export default function LiveAssistant() {
 
       const ai = new GoogleGenAI({ apiKey });
 
-      const modelToUse = "gemini-2.0-flash-exp";
+      const modelToUse = "gemini-2.5-flash-native-audio-preview-12-2025";
 
       addLog(`Connecting to model: ${modelToUse}`);
       const sessionPromise = ai.live.connect({
