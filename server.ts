@@ -41,14 +41,14 @@ async function startServer() {
     secret: "achal-jewels-secret",
     resave: false,
     saveUninitialized: true,
-    cookie: { 
-      secure: true, 
+    cookie: {
+      secure: true,
       sameSite: 'none',
-      httpOnly: true 
+      httpOnly: true
     }
   }));
 
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
   console.log("Server starting. GEMINI_API_KEY present:", !!process.env.GEMINI_API_KEY);
 
   // Google OAuth Setup
@@ -60,7 +60,7 @@ async function startServer() {
 
   // API Routes
   app.get("/api/config", (req, res) => {
-    res.json({ 
+    res.json({
       hasApiKey: !!process.env.GEMINI_API_KEY,
       model: "gemini-2.0-flash-exp"
     });
@@ -146,7 +146,7 @@ async function startServer() {
     try {
       const { tokens } = await oauth2Client.getToken(code as string);
       (req.session as any).tokens = tokens;
-      
+
       res.send(`
         <html>
           <body>
@@ -187,7 +187,7 @@ async function startServer() {
 
       let content = "ACHAL JEWELS - OFFICE OVERVIEW\n";
       content += `Generated at: ${new Date().toLocaleString()}\n\n`;
-      
+
       content += "--- UPCOMING APPOINTMENTS ---\n";
       appointments.forEach(a => {
         content += `[${a.date} ${a.time}] ${a.caller_name} (${a.company || 'N/A'}) - ${a.purpose || 'No purpose'}\n`;
@@ -202,7 +202,7 @@ async function startServer() {
         name: `Achal_Jewels_Overview_${new Date().toISOString().split('T')[0]}.txt`,
         mimeType: "text/plain"
       };
-      
+
       const media = {
         mimeType: "text/plain",
         body: content
