@@ -321,7 +321,13 @@ export default function LiveAssistant() {
       for (const part of parts) {
         if (part.text) {
           console.log("AI Text:", part.text);
-          setTranscription(`Jitender: ${part.text}`);
+          // Filter out model thinking/reasoning text (contains markdown like **, backticks, etc.)
+          const isThinkingText = part.text.includes('**') || part.text.includes('`') ||
+            part.text.includes('tool') || part.text.includes('step') ||
+            part.text.startsWith('I\'ve determined') || part.text.startsWith('My next');
+          if (!isThinkingText) {
+            setTranscription(`Jitender: ${part.text}`);
+          }
           setIsAiSpeaking(true);
         }
         if (part.inlineData?.data) {
