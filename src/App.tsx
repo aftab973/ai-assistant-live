@@ -69,12 +69,7 @@ export default function App() {
 
         {/* Dashboard Section */}
         <section className="pt-12 border-t border-black/5">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-slate-900">Office Overview</h2>
-              <p className="text-slate-500">Real-time view of Ashish sir's calendar and messages.</p>
-            </div>
-          </div>
+
           <Dashboard />
         </section>
       </main>

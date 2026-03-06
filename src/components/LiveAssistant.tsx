@@ -257,11 +257,24 @@ export default function LiveAssistant() {
     gainNode.gain.value = 0;
 
     processor.onaudioprocess = (e) => {
+      const inputData = e.inputBuffer.getChannelData(0);
+
       if (isMuted) {
         setVolume(0);
+        // Send empty (zeroed) PCM data when muted to keep connection alive but send silence
+        if (sessionPromiseRef.current) {
+          const emptyPcm = new Int16Array(inputData.length);
+          sessionPromiseRef.current.then(session => {
+            const uint8 = new Uint8Array(emptyPcm.buffer);
+            let binary = "";
+            for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+            session.sendRealtimeInput({
+              media: { data: btoa(binary), mimeType: 'audio/pcm;rate=16000' }
+            });
+          });
+        }
         return;
       }
-      const inputData = e.inputBuffer.getChannelData(0);
 
       // Calculate volume for visualizer
       let sum = 0;
