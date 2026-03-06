@@ -79,7 +79,7 @@ export default function LiveAssistant() {
           setErrorMessage("Connection timed out. Please check your internet and try again.");
           stopSession();
         }
-      }, 15000);
+      }, 10000);
 
       if (!isReconnect) {
         audioQueue.current = [];
@@ -128,6 +128,15 @@ export default function LiveAssistant() {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } },
+          },
+          realtimeInputConfig: {
+            automaticActivityDetection: {
+              disabled: false,
+              startOfSpeechSensitivity: "START_SENSITIVITY_HIGH" as any,
+              endOfSpeechSensitivity: "END_SENSITIVITY_HIGH" as any,
+              prefixPaddingMs: 20,
+              silenceDurationMs: 300,
+            }
           },
           tools: TOOLS,
           thinkingConfig: { thinkingBudget: 0 },
@@ -480,7 +489,7 @@ export default function LiveAssistant() {
 
       const currentTime = audioContextRef.current.currentTime;
       if (nextStartTimeRef.current < currentTime) {
-        nextStartTimeRef.current = currentTime + 0.05; // Small buffer
+        nextStartTimeRef.current = currentTime + 0.01; // Minimal buffer for low latency
       }
 
       source.start(nextStartTimeRef.current);
