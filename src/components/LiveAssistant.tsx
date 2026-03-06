@@ -9,6 +9,7 @@ export default function LiveAssistant() {
   const [status, setStatus] = useState<'idle' | 'connecting' | 'active' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const isMutedRef = useRef(false);
   const [debugInfo, setDebugInfo] = useState<string>("");
   const [volume, setVolume] = useState(0);
   const [reconnectCount, setReconnectCount] = useState(0);
@@ -259,7 +260,7 @@ export default function LiveAssistant() {
     processor.onaudioprocess = (e) => {
       const inputData = e.inputBuffer.getChannelData(0);
 
-      if (isMuted) {
+      if (isMutedRef.current) {
         setVolume(0);
         // Send empty (zeroed) PCM data when muted to keep connection alive but send silence
         if (sessionPromiseRef.current) {
@@ -634,7 +635,11 @@ export default function LiveAssistant() {
         {isActive && (
           <>
             <button
-              onClick={() => setIsMuted(!isMuted)}
+              onClick={() => {
+                const newState = !isMuted;
+                setIsMuted(newState);
+                isMutedRef.current = newState;
+              }}
               className={`p-4 rounded-2xl transition-all ${isMuted ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
             >
