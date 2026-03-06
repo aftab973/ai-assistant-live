@@ -153,7 +153,7 @@ export default function LiveAssistant() {
                     clientContent: {
                       turns: [{
                         role: 'user',
-                        parts: [{ text: "Hello Jitendra, please introduce yourself as Ashish sir's assistant and ask for my name. Speak in Hinglish." }]
+                        parts: [{ text: "Hello! Please introduce yourself using your standard premium greeting." }]
                       }],
                       turnComplete: true
                     }
