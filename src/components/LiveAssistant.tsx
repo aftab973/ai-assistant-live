@@ -134,10 +134,11 @@ export default function LiveAssistant() {
               disabled: false,
               startOfSpeechSensitivity: "START_SENSITIVITY_HIGH" as any,
               endOfSpeechSensitivity: "END_SENSITIVITY_HIGH" as any,
-              prefixPaddingMs: 20,
-              silenceDurationMs: 300,
+              prefixPaddingMs: 10,
+              silenceDurationMs: 250,
             }
           },
+          explicitVadSignal: true,
           tools: TOOLS,
           thinkingConfig: { thinkingBudget: 0 },
         },
