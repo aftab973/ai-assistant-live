@@ -96,24 +96,42 @@ export default function LiveAssistant() {
 
       if (!streamRef.current) {
         setDebugInfo("Requesting microphone access...");
-        streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+        try {
+          streamRef.current = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            }
+          });
+        } catch (micErr: any) {
+          if (micErr.name === 'NotAllowedError') {
+            throw new Error("Microphone permission denied. Please allow microphone access in your browser settings and try again.");
+          } else if (micErr.name === 'NotFoundError') {
+            throw new Error("No microphone found. Please connect a microphone and try again.");
+          } else {
+            throw new Error(`Microphone error: ${micErr.message}`);
+          }
+        }
       }
 
-      if (!audioContextRef.current) {
+      // Verify mic stream is still active
+      const tracks = streamRef.current.getAudioTracks();
+      if (tracks.length === 0 || tracks[0].readyState === 'ended') {
+        addLog("Mic stream ended, requesting new one...");
+        streamRef.current = null;
+        streamRef.current = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
+      }
+
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         addLog("Setting up AudioContext...");
         audioContextRef.current = new AudioContext({ sampleRate: 24000 });
       }
 
       if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume();
-      }
-
-      // Ensure we have a 16kHz context for input, also resumed
-      if (!(window as any).inputAudioContext) {
-        (window as any).inputAudioContext = new AudioContext({ sampleRate: 16000 });
-      }
-      if ((window as any).inputAudioContext.state === 'suspended') {
-        await (window as any).inputAudioContext.resume();
       }
 
       const ai = new GoogleGenAI({ apiKey });
@@ -134,11 +152,10 @@ export default function LiveAssistant() {
               disabled: false,
               startOfSpeechSensitivity: "START_SENSITIVITY_HIGH" as any,
               endOfSpeechSensitivity: "END_SENSITIVITY_HIGH" as any,
-              prefixPaddingMs: 10,
-              silenceDurationMs: 250,
+              prefixPaddingMs: 20,
+              silenceDurationMs: 500,
             }
           },
-          explicitVadSignal: true,
           tools: TOOLS,
           thinkingConfig: { thinkingBudget: 0 },
         },
@@ -258,32 +275,25 @@ export default function LiveAssistant() {
   };
 
   const setupAudioInput = () => {
-    if (!audioContextRef.current || !streamRef.current) return;
+    if (!streamRef.current) return;
 
-    // Use the pre-warmed 16kHz context
-    const inputContext = (window as any).inputAudioContext || new AudioContext({ sampleRate: 16000 });
+    // Use a fresh 16kHz context for input specifically (Gemini requirement)
+    const inputContext = new AudioContext({ sampleRate: 16000 });
     const source = inputContext.createMediaStreamSource(streamRef.current);
     const processor = inputContext.createScriptProcessor(1024, 1, 1);
     const gainNode = inputContext.createGain();
     gainNode.gain.value = 0;
 
     processor.onaudioprocess = (e) => {
+      // If we are stopped or reconnecting, do nothing to prevent stray audio
+      if (!isActive) return;
+
       const inputData = e.inputBuffer.getChannelData(0);
 
+      // Simple, robust mute: just don't send anything. 
+      // Emitting 0s used to confuse the VAD model.
       if (isMutedRef.current) {
         setVolume(0);
-        // Send empty (zeroed) PCM data when muted to keep connection alive but send silence
-        if (sessionPromiseRef.current) {
-          const emptyPcm = new Int16Array(inputData.length);
-          sessionPromiseRef.current.then(session => {
-            const uint8 = new Uint8Array(emptyPcm.buffer);
-            let binary = "";
-            for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
-            session.sendRealtimeInput({
-              media: { data: btoa(binary), mimeType: 'audio/pcm;rate=16000' }
-            });
-          });
-        }
         return;
       }
 
@@ -294,6 +304,7 @@ export default function LiveAssistant() {
       }
       setVolume(Math.sqrt(sum / inputData.length));
 
+      // Convert Float32 to Int16 PCM
       const pcmData = new Int16Array(inputData.length);
       for (let i = 0; i < inputData.length; i++) {
         pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
@@ -301,7 +312,7 @@ export default function LiveAssistant() {
 
       if (sessionPromiseRef.current) {
         sessionPromiseRef.current.then(session => {
-          // Safer base64 conversion
+          // Efficient base64 conversion
           const uint8 = new Uint8Array(pcmData.buffer);
           let binary = "";
           for (let i = 0; i < uint8.length; i++) {
@@ -309,9 +320,13 @@ export default function LiveAssistant() {
           }
           const base64Data = btoa(binary);
 
-          session.sendRealtimeInput({
-            media: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
-          });
+          try {
+            session.sendRealtimeInput({
+              media: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
+            });
+          } catch (e) {
+            console.error("Failed to send audio chunk:", e);
+          }
         });
       }
     };
@@ -320,8 +335,8 @@ export default function LiveAssistant() {
     processor.connect(gainNode);
     gainNode.connect(inputContext.destination);
 
-    // Store for cleanup
-    (processorRef as any).current = { processor, context: inputContext, gainNode };
+    // Store for aggressive cleanup later
+    (processorRef as any).current = { processor, source, context: inputContext, gainNode };
   };
 
   const handleServerMessage = async (message: any) => {
@@ -506,7 +521,7 @@ export default function LiveAssistant() {
   };
 
   const stopSession = () => {
-    console.log("Stopping session and cleaning up...");
+    console.log("Stopping session and aggressively cleaning up audio...");
     userInitiatedStop.current = true;
     setIsActive(false);
     setIsAiSpeaking(false);
@@ -520,43 +535,54 @@ export default function LiveAssistant() {
     if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
     if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
 
+    // Stop microphone stream tracks
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop());
       streamRef.current = null;
     }
 
+    // Aggressively destroy the input processor to prevent zombie listeners
     if (processorRef.current) {
       try {
         const p = (processorRef as any).current;
-        if (p && p.processor) p.processor.disconnect();
-        if (p && p.gainNode) p.gainNode.disconnect();
-        if (p && p.context) {
-          p.context.close();
-          if ((window as any).inputAudioContext === p.context) {
-            (window as any).inputAudioContext = null;
+        if (p) {
+          if (p.processor) {
+            p.processor.onaudioprocess = null;
+            p.processor.disconnect();
+          }
+          if (p.source) p.source.disconnect();
+          if (p.gainNode) p.gainNode.disconnect();
+          if (p.context && p.context.state !== 'closed') {
+            p.context.close();
           }
         }
       } catch (e) {
-        console.error("Error cleaning up processor:", e);
+        console.error("Error cleaning up audio processor:", e);
       }
       processorRef.current = null;
     }
 
+    // Stop the output audio context
     if (audioContextRef.current) {
       try {
-        audioContextRef.current.close();
+        if (audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close();
+        }
       } catch (e) {
-        console.error("Error closing audio context:", e);
+        console.error("Error closing output audio context:", e);
       }
       audioContextRef.current = null;
     }
 
+    // Clear output audio queue & stop playing buffers
     audioQueue.current = [];
     activeSourcesRef.current.forEach(s => {
       try { s.stop(); s.disconnect(); } catch (e) { }
     });
     activeSourcesRef.current = [];
     isPlaying.current = false;
+
+    // Reset session refs
     sessionRef.current = null;
     sessionPromiseRef.current = null;
   };
