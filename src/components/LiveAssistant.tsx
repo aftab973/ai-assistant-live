@@ -37,6 +37,7 @@ export default function LiveAssistant() {
 
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const inputAudioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const audioQueue = useRef<Int16Array[]>([]);
@@ -132,6 +133,14 @@ export default function LiveAssistant() {
 
       if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume();
+      }
+
+      if (!inputAudioContextRef.current || inputAudioContextRef.current.state === 'closed') {
+        inputAudioContextRef.current = new AudioContext({ sampleRate: 16000 });
+      }
+
+      if (inputAudioContextRef.current.state === 'suspended') {
+        await inputAudioContextRef.current.resume();
       }
 
       const ai = new GoogleGenAI({ apiKey });
@@ -275,10 +284,18 @@ export default function LiveAssistant() {
   };
 
   const setupAudioInput = () => {
-    if (!streamRef.current) return;
+    if (!streamRef.current || !inputAudioContextRef.current) {
+      console.error("Missing stream or input audio context");
+      return;
+    }
 
-    // Use a fresh 16kHz context for input specifically (Gemini requirement)
-    const inputContext = new AudioContext({ sampleRate: 16000 });
+    const inputContext = inputAudioContextRef.current;
+
+    // Ensure it's running
+    if (inputContext.state === 'suspended') {
+      inputContext.resume();
+    }
+
     const source = inputContext.createMediaStreamSource(streamRef.current);
     const processor = inputContext.createScriptProcessor(1024, 1, 1);
     const gainNode = inputContext.createGain();
@@ -572,6 +589,18 @@ export default function LiveAssistant() {
         console.error("Error closing output audio context:", e);
       }
       audioContextRef.current = null;
+    }
+
+    // Stop the 16kHz input audio context
+    if (inputAudioContextRef.current) {
+      try {
+        if (inputAudioContextRef.current.state !== 'closed') {
+          inputAudioContextRef.current.close();
+        }
+      } catch (e) {
+        console.error("Error closing input audio context:", e);
+      }
+      inputAudioContextRef.current = null;
     }
 
     // Clear output audio queue & stop playing buffers
