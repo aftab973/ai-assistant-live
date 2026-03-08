@@ -782,17 +782,6 @@ export default function LiveAssistant() {
         </div>
       )}
 
-      {/* Debug Logs Panel - Always visible for troubleshooting */}
-      {logs.length > 0 && (
-        <div className="mt-4 w-full max-w-md bg-slate-900 rounded-xl p-3 text-left max-h-40 overflow-y-auto">
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">Connection Logs</p>
-          {logs.map((log, i) => (
-            <p key={i} className={`text-[11px] font-mono ${log.includes('Error') || log.includes('error') ? 'text-red-400' : 'text-slate-400'}`}>
-              {log}
-            </p>
-          ))}
-        </div>
-      )}
 
     </div>
   );
