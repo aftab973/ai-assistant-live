@@ -20,7 +20,7 @@ export default function LiveAssistant() {
 
   const addLog = (msg: string) => {
     console.log(`[ASSISTANT] ${msg}`);
-    setLogs(prev => [msg, ...prev].slice(0, 5));
+    setLogs(prev => [msg, ...prev].slice(0, 15));
   };
 
   useEffect(() => {
@@ -143,98 +143,110 @@ export default function LiveAssistant() {
         await inputAudioContextRef.current.resume();
       }
 
+      addLog(`API Key length: ${apiKey.length}, starts with: ${apiKey.substring(0, 8)}...`);
       const ai = new GoogleGenAI({ apiKey });
 
       const modelToUse = "gemini-2.5-flash-native-audio-preview-12-2025";
 
       addLog(`Connecting to model: ${modelToUse}`);
-      const sessionPromise = ai.live.connect({
-        model: modelToUse,
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } },
-          },
-          realtimeInputConfig: {
-            automaticActivityDetection: {
-              disabled: false,
-              startOfSpeechSensitivity: "START_SENSITIVITY_HIGH" as any,
-              endOfSpeechSensitivity: "END_SENSITIVITY_HIGH" as any,
-              prefixPaddingMs: 20,
-              silenceDurationMs: 500,
-            }
-          },
-          tools: TOOLS,
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-        callbacks: {
-          onopen: () => {
-            if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
-            addLog("Connection opened successfully!");
-            setStatus('active');
-            setIsActive(true);
-            setDebugInfo("Session Active");
-            setReconnectCount(0);
-            reconnectCountRef.current = 0;
-            setupAudioInput();
-            startHeartbeat();
-
-            // Trigger initial greeting only on first connect
-            if (!greetingSentRef.current) {
-              greetingSentRef.current = true;
-              sessionPromise.then(session => {
-                try {
-                  addLog("Sending initial greeting...");
-                  (session as any).send({
-                    clientContent: {
-                      turns: [{
-                        role: 'user',
-                        parts: [{ text: "Hello! Please introduce yourself using your standard premium greeting." }]
-                      }],
-                      turnComplete: true
-                    }
-                  });
-                } catch (e) {
-                  console.error("Greeting trigger failed:", e);
-                }
-              });
-            }
-          },
-          onmessage: async (message) => {
-            handleServerMessage(message);
-          },
-          onclose: () => {
-            if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
-            addLog("Connection closed.");
-            if (!userInitiatedStop.current && reconnectCountRef.current < 3) {
-              handleReconnect();
-            } else {
-              if (reconnectCountRef.current >= 3) {
-                setErrorMessage("Connection failed after 3 attempts.");
-                setStatus('error');
+      setDebugInfo(`Connecting to ${modelToUse}...`);
+      let sessionPromise;
+      try {
+        sessionPromise = ai.live.connect({
+          model: modelToUse,
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTION,
+            responseModalities: [Modality.AUDIO],
+            speechConfig: {
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } },
+            },
+            realtimeInputConfig: {
+              automaticActivityDetection: {
+                disabled: false,
+                startOfSpeechSensitivity: "START_SENSITIVITY_HIGH" as any,
+                endOfSpeechSensitivity: "END_SENSITIVITY_HIGH" as any,
+                prefixPaddingMs: 20,
+                silenceDurationMs: 500,
               }
-              stopSession();
-            }
+            },
+            tools: TOOLS,
+            thinkingConfig: { thinkingBudget: 0 },
           },
-          onerror: (err) => {
-            if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
-            const msg = err.message || JSON.stringify(err);
-            addLog(`Error: ${msg}`);
+          callbacks: {
+            onopen: () => {
+              if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
+              addLog("Connection opened successfully!");
+              setStatus('active');
+              setIsActive(true);
+              setDebugInfo("Session Active");
+              setReconnectCount(0);
+              reconnectCountRef.current = 0;
+              setupAudioInput();
+              startHeartbeat();
 
-            if (msg.includes("API_KEY_INVALID") || msg.includes("403")) {
-              setErrorMessage("API Key Error. Check Secrets.");
-              stopSession();
-            } else if (!userInitiatedStop.current && reconnectCountRef.current < 3) {
-              handleReconnect();
-            } else {
-              setErrorMessage(`Connection failed: ${msg}`);
-              setStatus('error');
-              stopSession();
+              // Trigger initial greeting only on first connect
+              if (!greetingSentRef.current) {
+                greetingSentRef.current = true;
+                sessionPromise.then(session => {
+                  try {
+                    addLog("Sending initial greeting...");
+                    (session as any).send({
+                      clientContent: {
+                        turns: [{
+                          role: 'user',
+                          parts: [{ text: "Hello! Please introduce yourself using your standard premium greeting." }]
+                        }],
+                        turnComplete: true
+                      }
+                    });
+                  } catch (e) {
+                    console.error("Greeting trigger failed:", e);
+                  }
+                });
+              }
+            },
+            onmessage: async (message) => {
+              handleServerMessage(message);
+            },
+            onclose: (e: any) => {
+              if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
+              addLog(`Connection closed. Code: ${e?.code}, Reason: ${e?.reason || 'none'}, wasClean: ${e?.wasClean}`);
+              console.error("WebSocket close event:", e);
+              if (!userInitiatedStop.current && reconnectCountRef.current < 3) {
+                handleReconnect();
+              } else {
+                if (reconnectCountRef.current >= 3) {
+                  setErrorMessage("Connection failed after 3 attempts. Check console for details.");
+                  setStatus('error');
+                }
+                stopSession();
+              }
+            },
+            onerror: (err: any) => {
+              if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
+              const msg = err?.message || err?.error?.message || JSON.stringify(err);
+              addLog(`Error: ${msg}`);
+              console.error("WebSocket error event (full):", JSON.stringify(err, null, 2));
+              console.error("Error object:", err);
+
+              if (msg.includes("API_KEY_INVALID") || msg.includes("403")) {
+                setErrorMessage("API Key Error. Check Secrets.");
+                stopSession();
+              } else if (!userInitiatedStop.current && reconnectCountRef.current < 3) {
+                handleReconnect();
+              } else {
+                setErrorMessage(`Connection failed: ${msg}`);
+                setStatus('error');
+                stopSession();
+              }
             }
           }
-        }
-      });
+        });
+      } catch (connectErr: any) {
+        console.error("ai.live.connect() threw:", connectErr);
+        addLog(`Connect error: ${connectErr.message}`);
+        throw connectErr;
+      }
 
       sessionPromiseRef.current = sessionPromise;
       sessionRef.current = await sessionPromise;
@@ -765,6 +777,17 @@ export default function LiveAssistant() {
         </div>
       )}
 
+      {/* Debug Logs Panel - Always visible for troubleshooting */}
+      {logs.length > 0 && (
+        <div className="mt-4 w-full max-w-md bg-slate-900 rounded-xl p-3 text-left max-h-40 overflow-y-auto">
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">Connection Logs</p>
+          {logs.map((log, i) => (
+            <p key={i} className={`text-[11px] font-mono ${log.includes('Error') || log.includes('error') ? 'text-red-400' : 'text-slate-400'}`}>
+              {log}
+            </p>
+          ))}
+        </div>
+      )}
 
     </div>
   );
