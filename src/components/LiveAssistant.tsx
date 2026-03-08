@@ -6,6 +6,7 @@ import { SYSTEM_INSTRUCTION, TOOLS } from '../constants';
 
 export default function LiveAssistant() {
   const [isActive, setIsActive] = useState(false);
+  const isActiveRef = useRef(false);
   const [status, setStatus] = useState<'idle' | 'connecting' | 'active' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -62,6 +63,7 @@ export default function LiveAssistant() {
 
       setStatus('connecting');
       setIsActive(false);
+      isActiveRef.current = false;
       setDebugInfo("Checking server configuration...");
 
       const configRes = await fetch('/api/config');
@@ -178,6 +180,7 @@ export default function LiveAssistant() {
               addLog("Connection opened successfully!");
               setStatus('active');
               setIsActive(true);
+              isActiveRef.current = true;
               setDebugInfo("Session Active");
               setReconnectCount(0);
               reconnectCountRef.current = 0;
@@ -315,7 +318,8 @@ export default function LiveAssistant() {
 
     processor.onaudioprocess = (e) => {
       // If we are stopped or reconnecting, do nothing to prevent stray audio
-      if (!isActive) return;
+      // Use ref instead of state to avoid stale closure issue
+      if (!isActiveRef.current) return;
 
       const inputData = e.inputBuffer.getChannelData(0);
 
@@ -553,6 +557,7 @@ export default function LiveAssistant() {
     console.log("Stopping session and aggressively cleaning up audio...");
     userInitiatedStop.current = true;
     setIsActive(false);
+    isActiveRef.current = false;
     setIsAiSpeaking(false);
     setStatus('idle');
     setDebugInfo("");
